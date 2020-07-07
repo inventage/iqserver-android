@@ -1,0 +1,54 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 29
+    ndkVersion "21.0.6113669"
+
+    defaultConfig {
+        minSdkVersion 18
+        targetSdkVersion 29
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+
+        debug {
+            versionNameSuffix "D"
+            minifyEnabled true
+
+        }
+
+        release {
+            minifyEnabled true
+        }
+
+        stage.initWith(buildTypes.release)
+
+        stage {
+            versionNameSuffix "S"
+        }
+    }
+
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.preference:preference:1.1.0'
+    // Note that the layout breaks with version 1.1.0
+    implementation 'com.google.android.material:material:1.0.0'
+    // we use play services safety net for security checks.
+    // See https://developers.google.com/android/guides/setup
+    implementation 'com.google.android.gms:play-services-safetynet:17.0.0'
+    // we use ml vision to scan bar codes
+    implementation 'com.google.firebase:firebase-ml-vision:24.0.1'
+    implementation 'com.google.firebase:firebase-ml-vision-barcode-model:16.0.2'
+
+}
+

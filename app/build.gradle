@@ -1,0 +1,167 @@
+import com.android.build.gradle.api.ApplicationVariant
+
+plugins {
+    id 'org.sonatype.gradle.plugins.scan' version '1.0.3' // Update the version as needed
+}
+
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 29
+    ndkVersion "21.0.6113669"
+    // We disable ndk build here. We pack the compiled libraries.
+    // If libtess source changes, it is compiled manaully.
+    sourceSets.main.jni.srcDirs = []
+
+    defaultConfig {
+        vectorDrawables.useSupportLibrary = true
+        applicationId "com.inventage.sonatype.android"
+        minSdkVersion 18
+        targetSdkVersion 29
+        versionCode 53
+        versionName "7.10.1"
+    }
+
+    //compileOptions {
+    //    sourceCompatibility JavaVersion.VERSION_1_7
+    //    targetCompatibility JavaVersion.VERSION_1_7
+    //}
+
+    dataBinding {
+        enabled = true
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+	
+    buildTypes {
+	
+	    debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "D"
+            shrinkResources true
+            minifyEnabled true
+        }
+
+        release {
+            shrinkResources true
+            minifyEnabled true
+        }
+
+        stage.initWith(buildTypes.release)
+
+        stage {
+            applicationIdSuffix ".stage"
+            versionNameSuffix "S"
+        }
+    }
+}
+
+dependencies {
+    // see https://developer.android.com/topic/libraries/support-library/revisions.html
+    //
+    // run the following command to see full dependencies
+    // gradlew -q dependencies app:dependencies --configuration debugAndroidTestCompileClasspath
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    // Note that the layout breaks with version 1.1.0
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.preference:preference:1.1.0'
+    // firebase core ist not needed any more
+    //implementation 'com.google.firebase:firebase-core:17.2.2'
+    implementation 'com.google.firebase:firebase-messaging:20.1.2'
+    // we use the biometric library for biometric authentication
+    implementation 'androidx.biometric:biometric:1.0.1'
+    implementation project(path: ':commonlib')
+
+}
+
+apply plugin: 'com.google.gms.google-services'
+
+nexusIQScan {
+    username = 'dmenzi'
+    password = project['password']
+    serverUrl = 'https://clm.inventage.com'
+    applicationId = 'test'
+    stage = 'build' // build is used if omitted
+}
+
+configurations.all{ config ->
+    if (config.isCanBeResolved()) {
+        println("configurtaion: ${config.name}")
+    }
+}
+
+android.applicationVariants.all { ApplicationVariant variant ->
+    task "copyDependencies${variant.name.capitalize()}"() {
+        outputs.upToDateWhen { false }
+        doLast {
+            println "Executing copyDependencies${variant.name.capitalize()}"
+
+            def configNames = []
+//            def configNames = ["releaseCompileClasspath"]
+//            def configNames = ["releaseCompileOnlyDependenciesMetadata", "compile", "default", "archives", "releaseApiDependenciesMetadata", "releaseCompileOnlyDependenciesMetadata", "releaseImplementationDependenciesMetadata", "releaseRuntimeOnlyDependenciesMetadata"]
+//            def configNames = ["releaseCompileOnlyDependenciesMetadata", "compile", "default", "archives", "releaseApiDependenciesMetadata", "releaseCompileOnlyDependenciesMetadata", "releaseRuntimeOnlyDependenciesMetadata"]
+            for (def configName : configNames) {
+                println(configName)
+                def config = configurations.getByName(configName)
+//                config.setCanBeResolved(true)
+                config.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+                    println("resolved artifact: ${artifact}")
+                }
+
+                copy {
+                    from(config)
+                    into("$buildDir/dependencies/${configName}/")
+                }
+            }
+
+//            println("copy runtimeConfiguration")
+//            copy {
+//                from(variant.compileConfiguration)
+//                into("$buildDir/dependencies/runtimeConfiguration")
+//            }
+
+            println("raw android resources")
+            variant.allRawAndroidResources.each { rawAndroidResource ->
+                println(rawAndroidResource)
+            }
+            variant.getCompileClasspath().each { fileDependency ->
+                def sourcePath = fileDependency.absolutePath
+                println "Copying dependency:"
+                println sourcePath
+
+//The monstrous regex that gets the name of the lib from it’s exploded .aar path
+                def dependencyName
+                if (sourcePath.contains("classes.jar")) {
+                    println("Found classes.jar")
+                    def dependencyNameRegexResult = (sourcePath =~ /.*\/(.*)\.aar\/.*\/jars\/classes\.jar/)
+                    if (dependencyNameRegexResult.size() > 0) {
+                        dependencyName = dependencyNameRegexResult[0][1]
+                        println "Exploded AAR found : ${dependencyName}"
+                    }
+                }
+
+                copy {
+                    from fileDependency
+                    def destinationPath = "$buildDir/dependencies/${variant.name}/"
+                    into destinationPath
+
+                    rename { String filename ->
+                        if (filename.contains("classes.jar") && dependencyName != null) {
+                            dependencyName = "${dependencyName}.jar"
+                            println "Renaming dependency file to : ${dependencyName}"
+                            return dependencyName
+                        }
+                        return filename
+                    }
+                }
+            }
+        }
+    }
+}
