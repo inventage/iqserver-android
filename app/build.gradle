@@ -8,6 +8,7 @@ plugins {
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: com.inventage.gradle.android.AndroidResolvableConfigPlugin
 
 android {
     compileSdkVersion 29
@@ -91,77 +92,7 @@ nexusIQScan {
     stage = 'build' // build is used if omitted
 }
 
-configurations.all{ config ->
-    if (config.isCanBeResolved()) {
-        println("configurtaion: ${config.name}")
-    }
-}
-
-android.applicationVariants.all { ApplicationVariant variant ->
-    task "copyDependencies${variant.name.capitalize()}"() {
-        outputs.upToDateWhen { false }
-        doLast {
-            println "Executing copyDependencies${variant.name.capitalize()}"
-
-            def configNames = []
-//            def configNames = ["releaseCompileClasspath"]
-//            def configNames = ["releaseCompileOnlyDependenciesMetadata", "compile", "default", "archives", "releaseApiDependenciesMetadata", "releaseCompileOnlyDependenciesMetadata", "releaseImplementationDependenciesMetadata", "releaseRuntimeOnlyDependenciesMetadata"]
-//            def configNames = ["releaseCompileOnlyDependenciesMetadata", "compile", "default", "archives", "releaseApiDependenciesMetadata", "releaseCompileOnlyDependenciesMetadata", "releaseRuntimeOnlyDependenciesMetadata"]
-            for (def configName : configNames) {
-                println(configName)
-                def config = configurations.getByName(configName)
-//                config.setCanBeResolved(true)
-                config.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-                    println("resolved artifact: ${artifact}")
-                }
-
-                copy {
-                    from(config)
-                    into("$buildDir/dependencies/${configName}/")
-                }
-            }
-
-//            println("copy runtimeConfiguration")
-//            copy {
-//                from(variant.compileConfiguration)
-//                into("$buildDir/dependencies/runtimeConfiguration")
-//            }
-
-            println("raw android resources")
-            variant.allRawAndroidResources.each { rawAndroidResource ->
-                println(rawAndroidResource)
-            }
-            variant.getCompileClasspath().each { fileDependency ->
-                def sourcePath = fileDependency.absolutePath
-                println "Copying dependency:"
-                println sourcePath
-
-//The monstrous regex that gets the name of the lib from it’s exploded .aar path
-                def dependencyName
-                if (sourcePath.contains("classes.jar")) {
-                    println("Found classes.jar")
-                    def dependencyNameRegexResult = (sourcePath =~ /.*\/(.*)\.aar\/.*\/jars\/classes\.jar/)
-                    if (dependencyNameRegexResult.size() > 0) {
-                        dependencyName = dependencyNameRegexResult[0][1]
-                        println "Exploded AAR found : ${dependencyName}"
-                    }
-                }
-
-                copy {
-                    from fileDependency
-                    def destinationPath = "$buildDir/dependencies/${variant.name}/"
-                    into destinationPath
-
-                    rename { String filename ->
-                        if (filename.contains("classes.jar") && dependencyName != null) {
-                            dependencyName = "${dependencyName}.jar"
-                            println "Renaming dependency file to : ${dependencyName}"
-                            return dependencyName
-                        }
-                        return filename
-                    }
-                }
-            }
-        }
-    }
+task copyDeps(type: Copy) {
+    from(configurations.iqServerScanning)
+    into("${buildDir}/scanning")
 }
