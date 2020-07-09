@@ -1,10 +1,3 @@
-import com.android.build.gradle.api.ApplicationVariant
-
-plugins {
-    id 'org.sonatype.gradle.plugins.scan' version '1.0.3' // Update the version as needed
-}
-
-
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
@@ -83,14 +76,6 @@ dependencies {
 }
 
 apply plugin: 'com.google.gms.google-services'
-
-nexusIQScan {
-    username = 'dmenzi'
-    password = project['password']
-    serverUrl = 'https://clm.inventage.com'
-    applicationId = 'test'
-    stage = 'build' // build is used if omitted
-}
 
 task copyDeps(type: Copy) {
     from(configurations.iqServerScanning)
