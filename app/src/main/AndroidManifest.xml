@@ -1,0 +1,24 @@
+<manifest
+    package="com.inventage.sonatype.android.app"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    >
+
+    <application
+        android:name="com.inventage.sonatype.android.Application"
+        android:allowBackup="false"
+        android:hardwareAccelerated="true"
+
+        tools:ignore="GoogleAppIndexingWarning">
+
+        <!-- providers used for file sharing between the camera app and e-banking to share files
+             NOTE: The android:authorities property must be unique. We use the application id here
+             so that different build variants can be installed on the same device. This constant
+             must match with the constant ImageCaptureHelper.PROVIDER_AUTHORITY in the source code.
+             See EB-12409
+        -->
+
+        <!-- services -->
+
+    </application>
+</manifest>
