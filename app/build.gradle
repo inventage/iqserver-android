@@ -72,7 +72,6 @@ dependencies {
     // we use the biometric library for biometric authentication
     implementation 'androidx.biometric:biometric:1.0.1'
     implementation project(path: ':commonlib')
-
 }
 
 apply plugin: 'com.google.gms.google-services'

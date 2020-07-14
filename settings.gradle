@@ -1,1 +1,3 @@
 include ':commonlib', ':app'
+
+enableFeaturePreview("GRADLE_METADATA")
