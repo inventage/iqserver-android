@@ -3,8 +3,11 @@ package com.inventage.gradle.android;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.ProjectDependency;
+import org.gradle.api.artifacts.*;
+import org.gradle.api.attributes.Attribute;
+import org.gradle.api.attributes.Usage;
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
+import org.gradle.api.model.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +23,10 @@ public class AndroidResolvableConfigPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         final Configuration scanning = project.getConfigurations().create("iqServerScanning");
+        scanning.attributes(attributeContainer -> {
+            final ObjectFactory factory = project.getObjects();
+            attributeContainer.attribute(Usage.USAGE_ATTRIBUTE, factory.named(Usage.class, Usage.JAVA_RUNTIME));
+        });
 
         copyReleaseCompileClasspathDependencies(project, scanning);
     }
