@@ -1,3 +1,7 @@
+plugins {
+    id 'org.sonatype.gradle.plugins.scan' version '1.2.0'
+}
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
@@ -79,4 +83,13 @@ apply plugin: 'com.google.gms.google-services'
 task copyDeps(type: Copy) {
     from(configurations.iqServerScanning)
     into("${buildDir}/scanning")
+}
+
+nexusIQScan {
+    username = project['nexusIQScan.username']
+    password = project['nexusIQScan.password']
+    serverUrl = project['nexusIQScan.serverUrl']
+    applicationId = 'test'
+    stage = 'build' // build is used if omitted
+    allConfigurations = true // if true includes the dependencies in all resolvable configurations. By default is false, meaning only 'compileClasspath' and 'releaseCompileClasspath' are considered
 }
